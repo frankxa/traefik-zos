@@ -1,27 +1,17 @@
-//go:build !zos
-// +build !zos
+//go:build zos
+// +build zos
 
 package file
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-	"text/template"
-
-	"github.com/Masterminds/sprig/v3"
 	"github.com/rs/zerolog/log"
-	"github.com/traefik/paerser/file"
 	"github.com/traefik/traefik/v3/pkg/config/dynamic"
 	"github.com/traefik/traefik/v3/pkg/logs"
 	"github.com/traefik/traefik/v3/pkg/provider"
 	"github.com/traefik/traefik/v3/pkg/safe"
-	"github.com/traefik/traefik/v3/pkg/tls"
-	"gopkg.in/fsnotify.v1"
+	//"gopkg.in/fsnotify.v1"  // zos does not support fsnotify
 )
 
 const providerName = "file"
@@ -38,7 +28,8 @@ type Provider struct {
 
 // SetDefaults sets the default values.
 func (p *Provider) SetDefaults() {
-	p.Watch = true
+	//p.Watch = true  // todo need fs.notify mechanism for zos to detect changes to dynamic configuration file
+	p.Watch = false
 	p.Filename = ""
 }
 
@@ -50,6 +41,7 @@ func (p *Provider) Init() error {
 // Provide allows the file provider to provide configurations to traefik
 // using the given configuration channel.
 func (p *Provider) Provide(configurationChan chan<- dynamic.Message, pool *safe.Pool) error {
+	/* zos does not support fsnotify
 	if p.Watch {
 		var watchItem string
 
@@ -66,9 +58,10 @@ func (p *Provider) Provide(configurationChan chan<- dynamic.Message, pool *safe.
 			return err
 		}
 	}
-
+		zos does not support fsnotify */
 	configuration, err := p.BuildConfiguration()
 	if err != nil {
+		/* zos does not support fsnotify
 		if p.Watch {
 			log.Debug().
 				Str(logs.ProviderName, providerName).
@@ -77,6 +70,7 @@ func (p *Provider) Provide(configurationChan chan<- dynamic.Message, pool *safe.
 
 			return nil
 		}
+		zos does not support fsnotify */
 		return err
 	}
 
@@ -100,6 +94,7 @@ func (p *Provider) BuildConfiguration() (*dynamic.Configuration, error) {
 	return nil, errors.New("error using file configuration provider, neither filename or directory defined")
 }
 
+/* zos does not support fsnotify
 func (p *Provider) addWatcher(pool *safe.Pool, directory string, configurationChan chan<- dynamic.Message, callback func(chan<- dynamic.Message, fsnotify.Event)) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -157,6 +152,7 @@ func (p *Provider) watcherCallback(configurationChan chan<- dynamic.Message, eve
 
 	sendConfigToChannel(configurationChan, configuration)
 }
+zos does not support fsnotify */
 
 func sendConfigToChannel(configurationChan chan<- dynamic.Message, configuration *dynamic.Configuration) {
 	configurationChan <- dynamic.Message{
