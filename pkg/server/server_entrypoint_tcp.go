@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -434,9 +435,12 @@ func buildListener(ctx context.Context, entryPoint *static.EntryPoint) (net.List
 	if err != nil {
 		return nil, fmt.Errorf("error opening listener: %w", err)
 	}
-
-	listener = tcpKeepAliveListener{listener.(*net.TCPListener)}
-
+	//todo zos support fix needed for setkeepalive
+	if runtime.GOOS == "zos" {
+		log.Ctx(ctx).Info().Msgf("TCP setKeepAlive Listener not enabled for IP %v", entryPoint.Address)
+	} else {
+		listener = tcpKeepAliveListener{listener.(*net.TCPListener)}
+	}
 	if entryPoint.ProxyProtocol != nil {
 		listener, err = buildProxyProtocolListener(ctx, entryPoint, listener)
 		if err != nil {
